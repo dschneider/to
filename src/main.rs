@@ -1,12 +1,9 @@
-extern crate ansi_term;
-
 use std::io;
 use std::env;
 use std::fs;
 use std::process;
 use std::io::prelude::*;
 use std::io::BufReader;
-use ansi_term::Colour::*;
 
 macro_rules! write_to_terminal(
     ($($arg:tt)*) => { {
@@ -15,35 +12,43 @@ macro_rules! write_to_terminal(
     } }
 );
 
-fn search_matching_folders_in_paths(paths: Vec<String>, folder_name: String) -> Vec<String> {
+fn search_matching_folders_in_paths(paths: Vec<String>, desired_folder: String) -> Vec<String> {
     let mut vec: Vec<String> = Vec::new();
 
     for path in &paths {
-        match fs::read_dir(path) {
-            Ok(entries) => {
-                for entry in entries {
-                    match entry {
-                        Ok(file) => {
-                            if file.path().is_dir() {
-                                match file.file_name().into_string() {
-                                    Ok(string) => {
-                                        if string.contains(&folder_name.clone()) {
-                                           vec.push(path.to_owned() + &string.to_owned());
-                                        }
-                                    },
-                                    Err(_) => println!("zolo")
-                                }
-                            }
-                        },
-                        Err(err) => println!("{}", err)
-                    }
-                }
-            },
-            Err(err) => println!("{}", err)
-        }
+        read_entries_in_path(path, &desired_folder, &mut vec);
     }
 
     vec
+}
+
+fn match_folder_names(path: &String, file: Result<std::fs::DirEntry, std::io::Error>, desired_folder: &String, vec: &mut Vec<String>) {
+    match file {
+        Ok(file_object) => {
+            if file_object.path().is_dir() {
+                match file_object.file_name().into_string() {
+                    Ok(string) => {
+                        if string.contains(&desired_folder.clone()) {
+                            vec.push(path.to_owned() + &string.to_owned());
+                        }
+                    },
+                    Err(_) => println!("zolo")
+                }
+            }
+        },
+        Err(err) => println!("{}", err)
+    }
+}
+
+fn read_entries_in_path(path: &String, desired_folder: &String, vec: &mut Vec<String>) {
+    match fs::read_dir(path) {
+        Ok(files) => {
+            for file in files {
+                 match_folder_names(path, file, desired_folder, vec);
+            }
+        },
+        Err(err) => println!("{}", err)
+    }
 }
 
 fn read_paths_from_config(file: fs::File) -> Vec<String> {
@@ -124,10 +129,6 @@ fn look_for_folder(folder_name: String) {
     }
 }
 
-fn print_error(message: String) {
-    println!("{}", Red.bold().paint(message))
-}
-
 fn read_folder_argument() -> Option<String> {
     env::args().nth(1)
 }
@@ -135,6 +136,6 @@ fn read_folder_argument() -> Option<String> {
 fn main() {
     match read_folder_argument() {
         Some (folder_name) => look_for_folder(folder_name),
-        None => print_error(String::from("Error: Missing folder name. Usage: to [foldername]\n"))
+        None => println!("Error: Missing folder name. Usage: to [foldername]\n")
     };
 }
