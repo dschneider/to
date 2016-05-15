@@ -90,41 +90,46 @@ fn get_paths_from_config_in_home_folder() -> Vec<String> {
 fn look_for_folder(folder_name: String) {
     let paths: Vec<String> = get_paths_from_config_in_home_folder();
     let matches: Vec<String> = search_matching_folders_in_paths(paths, folder_name);
+
+    if matches.len() > 1 {
+        prompt_user_for_input(&matches);
+    } else if matches.len() == 1 {
+        write_to_terminal!("One matching folder found");
+        println!("{}", matches[0]);
+    } else {
+        write_to_terminal!("No matching folders found");
+        process::exit(0);
+    }
+}
+
+fn prompt_user_for_input(matches: &Vec<String>) {
     let mut chosen: bool = false;
 
     while !chosen {
-        if matches.len() > 1 {
-            write_to_terminal!("Multiple matching folders found!");
+        write_to_terminal!("Multiple matching folders found!");
 
-            let mut input = String::new();
-            write_to_terminal!("Please choose a folder:\n");
+        let mut input = String::new();
+        write_to_terminal!("Please choose a folder:\n");
 
-            let mut index = 0;
-            for mat in &matches {
-                write_to_terminal!("{}: {}", index, mat);
-                index = index + 1;
-            }
+        let mut index = 0;
+        for mat in matches {
+            write_to_terminal!("{}: {}", index, mat);
+            index = index + 1;
+        }
 
-            write_to_terminal!("");
+        write_to_terminal!("");
 
-            io::stdin().read_line(&mut input).ok().expect("Couldn't read line");
+        io::stdin().read_line(&mut input).ok().expect("Couldn't read line");
 
-            let input: String = input.replace("\n", "");
-            let choice: i32 = input.parse().ok().expect("Wanted a number");
+        let input: String = input.replace("\n", "");
+        let choice: i32 = input.parse().ok().expect("Wanted a number");
 
-            if choice > matches.len() as i32 - 1 {
-                write_to_terminal!("Please enter one of the shown inputs");
-            } else {
-                chosen = true;
-                println!("{}", matches[choice as usize]);
-            }
-        } else if matches.len() == 1 {
-            chosen = true;
-            write_to_terminal!("One matching folder found");
-            println!("{}", matches[0]);
+        if choice > matches.len() as i32 - 1 {
+            chosen = false;
+            write_to_terminal!("Please enter one of the shown inputs");
         } else {
-            write_to_terminal!("No matching folders found");
-            process::exit(0);
+            chosen = true;
+            println!("{}", matches[choice as usize]);
         }
     }
 }
