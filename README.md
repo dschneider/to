@@ -11,3 +11,4 @@ A program written in Rust that helps to navigate through many project folders
 * Check if imported modules used
 * Don't panic if letter for input is given, just go back to the loop
 * Make functions private in config module
+* Make folder small letters, so it doesn't differentiate

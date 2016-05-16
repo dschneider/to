@@ -3,8 +3,8 @@ use std::process;
 use std::fs;
 use std::io::prelude::*;
 
-pub mod config;
-pub mod input;
+mod config;
+mod input;
 
 macro_rules! write_to_terminal_through_stderr(
     ($($arg:tt)*) => { {
@@ -13,17 +13,44 @@ macro_rules! write_to_terminal_through_stderr(
     } }
 );
 
-fn search_matching_folders_in_paths(paths: Vec<String>, desired_folder: String) -> Vec<String> {
+fn main() {
+    match read_folder_argument() {
+        Some(desired_folder) => look_for_folder(&desired_folder),
+        None => println!("Error: Missing folder name. Usage: to [foldername]\n")
+    };
+}
+
+
+fn read_folder_argument() -> Option<String> {
+    env::args().nth(1)
+}
+
+fn look_for_folder(folder_name: &str) {
+    let paths: Vec<String> = config::get_paths_from_config_in_home_folder();
+    let matches: Vec<String> = search_matching_folders_in_paths_from_config(paths, folder_name);
+
+    if matches.len() > 1 {
+        prompt_user_for_input(&matches);
+    } else if matches.len() == 1 {
+        write_to_terminal_through_stderr!("One matching folder found");
+        println!("{}", matches[0]);
+    } else {
+        write_to_terminal_through_stderr!("No matching folders found");
+        process::exit(0);
+    }
+}
+
+fn search_matching_folders_in_paths_from_config(paths: Vec<String>, desired_folder: &str) -> Vec<String> {
     let mut matches: Vec<String> = Vec::new();
 
     for path in &paths {
-        read_entries_in_path(path, &desired_folder, &mut matches);
+        read_entries_in_path(&path, desired_folder, &mut matches);
     }
 
     matches
 }
 
-fn read_entries_in_path(path: &String, desired_folder: &String, vec: &mut Vec<String>) {
+fn read_entries_in_path(path: &str, desired_folder: &str, vec: &mut Vec<String>) {
     match fs::read_dir(path) {
         Ok(files) => {
             for file in files {
@@ -34,36 +61,21 @@ fn read_entries_in_path(path: &String, desired_folder: &String, vec: &mut Vec<St
     }
 }
 
-fn match_folder_names(path: &String, file: Result<std::fs::DirEntry, std::io::Error>, desired_folder: &String, vec: &mut Vec<String>) {
+fn match_folder_names(path: &str, file: Result<std::fs::DirEntry, std::io::Error>, desired_folder: &str, vec: &mut Vec<String>) {
     match file {
         Ok(file_object) => {
             if file_object.path().is_dir() {
-                match file_object.file_name().into_string() {
-                    Ok(string) => {
-                        if string.contains(&desired_folder.to_string()) {
-                            vec.push(path.to_string() + &string.to_string());
+                match file_object.file_name().to_str() {
+                    Some(folder_string) => {
+                        if folder_string.contains(desired_folder) {
+                            vec.push(path.to_string() + folder_string);
                         }
                     },
-                    Err(_) => println!("zolo")
+                    None => println!("zolo")
                 }
             }
         },
         Err(err) => println!("{}", err)
-    }
-}
-
-fn look_for_folder(folder_name: String) {
-    let paths: Vec<String> = config::get_paths_from_config_in_home_folder();
-    let matches: Vec<String> = search_matching_folders_in_paths(paths, folder_name);
-
-    if matches.len() > 1 {
-        prompt_user_for_input(&matches);
-    } else if matches.len() == 1 {
-        write_to_terminal_through_stderr!("One matching folder found");
-        println!("{}", matches[0]);
-    } else {
-        write_to_terminal_through_stderr!("No matching folders found");
-        process::exit(0);
     }
 }
 
@@ -100,15 +112,4 @@ fn show_matching_folders(matches: &Vec<String>) {
     }
 
     write_to_terminal_through_stderr!("");
-}
-
-fn read_folder_argument() -> Option<String> {
-    env::args().nth(1)
-}
-
-fn main() {
-    match read_folder_argument() {
-        Some (folder_name) => look_for_folder(folder_name),
-        None => println!("Error: Missing folder name. Usage: to [foldername]\n")
-    };
 }
