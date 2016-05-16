@@ -40,8 +40,8 @@ fn match_folder_names(path: &String, file: Result<std::fs::DirEntry, std::io::Er
             if file_object.path().is_dir() {
                 match file_object.file_name().into_string() {
                     Ok(string) => {
-                        if string.contains(&desired_folder.clone()) {
-                            vec.push(path.to_owned() + &string.to_owned());
+                        if string.contains(&desired_folder.to_string()) {
+                            vec.push(path.to_string() + &string.to_string());
                         }
                     },
                     Err(_) => println!("zolo")

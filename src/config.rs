@@ -19,10 +19,15 @@ pub fn get_paths_from_config_in_home_folder() -> Vec<String> {
     loaded_paths
 }
 
-fn load_config_file(home_dir: &PathBuf) -> Result<Vec<String>, &'static str> {
-    match fs::File::open(home_dir.to_str().unwrap().to_string() + "/.to/paths.cfg") {
-        Ok(file) => Ok(read_paths_from_config(file)),
-        Err(_) => Err("ERROR: No config file found. Create a '.to' folder in your home directory with paths.cfg inside")
+fn load_config_file(home_dir: &PathBuf) -> Result<Vec<String>, &str> {
+    match home_dir.to_str() {
+        Some(home_dir_string) => {
+            match fs::File::open(home_dir_string.to_string() + "/.to/paths.cfg") {
+                Ok(file) => Ok(read_paths_from_config(file)),
+                Err(_) => Err("ERROR: No config file found. Create a '.to' folder in your home directory with paths.cfg inside")
+            }
+        },
+        None => Err("Couldn't get home dir string")
     }
 }
 
