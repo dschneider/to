@@ -5,7 +5,7 @@ use std::process;
 use std::io::prelude::*;
 use std::io::BufReader;
 
-macro_rules! write_to_terminal(
+macro_rules! write_to_terminal_through_stderr(
     ($($arg:tt)*) => { {
         let r = writeln!(&mut ::std::io::stderr(), $($arg)*);
         r.expect("failed printing to stderr");
@@ -13,13 +13,24 @@ macro_rules! write_to_terminal(
 );
 
 fn search_matching_folders_in_paths(paths: Vec<String>, desired_folder: String) -> Vec<String> {
-    let mut vec: Vec<String> = Vec::new();
+    let mut matches: Vec<String> = Vec::new();
 
     for path in &paths {
-        read_entries_in_path(path, &desired_folder, &mut vec);
+        read_entries_in_path(path, &desired_folder, &mut matches);
     }
 
-    vec
+    matches
+}
+
+fn read_entries_in_path(path: &String, desired_folder: &String, vec: &mut Vec<String>) {
+    match fs::read_dir(path) {
+        Ok(files) => {
+            for file in files {
+                 match_folder_names(path, file, desired_folder, vec);
+            }
+        },
+        Err(err) => println!("{}", err)
+    }
 }
 
 fn match_folder_names(path: &String, file: Result<std::fs::DirEntry, std::io::Error>, desired_folder: &String, vec: &mut Vec<String>) {
@@ -34,17 +45,6 @@ fn match_folder_names(path: &String, file: Result<std::fs::DirEntry, std::io::Er
                     },
                     Err(_) => println!("zolo")
                 }
-            }
-        },
-        Err(err) => println!("{}", err)
-    }
-}
-
-fn read_entries_in_path(path: &String, desired_folder: &String, vec: &mut Vec<String>) {
-    match fs::read_dir(path) {
-        Ok(files) => {
-            for file in files {
-                 match_folder_names(path, file, desired_folder, vec);
             }
         },
         Err(err) => println!("{}", err)
@@ -94,10 +94,10 @@ fn look_for_folder(folder_name: String) {
     if matches.len() > 1 {
         prompt_user_for_input(&matches);
     } else if matches.len() == 1 {
-        write_to_terminal!("One matching folder found");
+        write_to_terminal_through_stderr!("One matching folder found");
         println!("{}", matches[0]);
     } else {
-        write_to_terminal!("No matching folders found");
+        write_to_terminal_through_stderr!("No matching folders found");
         process::exit(0);
     }
 }
@@ -106,31 +106,50 @@ fn prompt_user_for_input(matches: &Vec<String>) {
     let mut chosen: bool = false;
 
     while !chosen {
-        write_to_terminal!("Multiple matching folders found!");
+        show_matching_folders(matches);
 
-        let mut input = String::new();
-        write_to_terminal!("Please choose a folder:\n");
-
-        let mut index = 0;
-        for mat in matches {
-            write_to_terminal!("{}: {}", index, mat);
-            index = index + 1;
+        match read_user_input() {
+            Ok(choice) => {
+                if choice > matches.len() as i32 - 1 {
+                    chosen = false;
+                    write_to_terminal_through_stderr!("Please enter one of the shown inputs");
+                } else {
+                    chosen = true;
+                    println!("{}", matches[choice as usize]);
+                }
+            },
+            Err(err) => panic!("{}", err)
         }
+    }
+}
 
-        write_to_terminal!("");
+fn show_matching_folders(matches: &Vec<String>) {
+    write_to_terminal_through_stderr!("Multiple matching folders found!");
+    write_to_terminal_through_stderr!("Please choose a folder:\n");
 
-        io::stdin().read_line(&mut input).ok().expect("Couldn't read line");
+    let mut index = 0;
 
-        let input: String = input.replace("\n", "");
-        let choice: i32 = input.parse().ok().expect("Wanted a number");
+    for mat in matches {
+        write_to_terminal_through_stderr!("{}: {}", index, mat);
+        index = index + 1;
+    }
 
-        if choice > matches.len() as i32 - 1 {
-            chosen = false;
-            write_to_terminal!("Please enter one of the shown inputs");
-        } else {
-            chosen = true;
-            println!("{}", matches[choice as usize]);
-        }
+    write_to_terminal_through_stderr!("");
+}
+
+fn read_user_input() -> Result<i32, String> {
+    let mut input = String::new();
+
+    match io::stdin().read_line(&mut input) {
+        Ok(_) => {
+            input = input.replace("\n", "");
+
+            match input.parse::<i32>() {
+                Ok(result) => Ok(result),
+                Err(_) => Err(String::from("Couldn't parse number"))
+            }
+        },
+        Err(_) => Err(String::from("Couldn't read input"))
     }
 }
 
