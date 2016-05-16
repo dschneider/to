@@ -1,9 +1,10 @@
-use std::io;
 use std::env;
-use std::fs;
 use std::process;
+use std::fs;
 use std::io::prelude::*;
-use std::io::BufReader;
+
+pub mod config;
+pub mod input;
 
 macro_rules! write_to_terminal_through_stderr(
     ($($arg:tt)*) => { {
@@ -51,44 +52,8 @@ fn match_folder_names(path: &String, file: Result<std::fs::DirEntry, std::io::Er
     }
 }
 
-fn read_paths_from_config(file: fs::File) -> Vec<String> {
-    let reader = BufReader::new(file);
-    let mut paths = Vec::new();
-
-    for line in reader.lines() {
-        match line {
-            Ok(path) => paths.push(path),
-            Err(err) => println!("{}", err)
-        }
-    }
-
-    paths
-}
-
-fn load_config_file(home_dir: &std::path::PathBuf) -> Result<Vec<String>, &'static str> {
-    match fs::File::open(home_dir.to_str().unwrap().to_string() + "/.to/paths.cfg") {
-        Ok(file) => Ok(read_paths_from_config(file)),
-        Err(_) => Err("ERROR: No config file found. Create a 'to' folder in your home directory with paths.cfg inside")
-    }
-}
-
-fn get_paths_from_config_in_home_folder() -> Vec<String> {
-    let loaded_paths: Vec<String> = match env::home_dir() {
-        Some(ref home_dir) => match load_config_file(home_dir) {
-            Ok(paths) => paths,
-            Err(err) => {
-                println!("{}", err);
-                Vec::new()
-            }
-        },
-        None => panic!("No home directory found!")
-    };
-
-    loaded_paths
-}
-
 fn look_for_folder(folder_name: String) {
-    let paths: Vec<String> = get_paths_from_config_in_home_folder();
+    let paths: Vec<String> = config::get_paths_from_config_in_home_folder();
     let matches: Vec<String> = search_matching_folders_in_paths(paths, folder_name);
 
     if matches.len() > 1 {
@@ -108,7 +73,7 @@ fn prompt_user_for_input(matches: &Vec<String>) {
     while !chosen {
         show_matching_folders(matches);
 
-        match read_user_input() {
+        match input::read_user_input() {
             Ok(choice) => {
                 if choice > matches.len() as i32 - 1 {
                     chosen = false;
@@ -135,22 +100,6 @@ fn show_matching_folders(matches: &Vec<String>) {
     }
 
     write_to_terminal_through_stderr!("");
-}
-
-fn read_user_input() -> Result<i32, String> {
-    let mut input = String::new();
-
-    match io::stdin().read_line(&mut input) {
-        Ok(_) => {
-            input = input.replace("\n", "");
-
-            match input.parse::<i32>() {
-                Ok(result) => Ok(result),
-                Err(_) => Err(String::from("Couldn't parse number"))
-            }
-        },
-        Err(_) => Err(String::from("Couldn't read input"))
-    }
 }
 
 fn read_folder_argument() -> Option<String> {
