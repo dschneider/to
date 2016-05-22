@@ -32,7 +32,7 @@ function to() {
 * Type `to FOLDER_NAME` in your terminal
 
 If more than one project folder containing the given folder name is found, the
-program will prompt you to chose a folder. `To` does a partial match on
+program will prompt you to choose a folder. `To` does a partial match on
 your folder name.
 
 ## TODO
