@@ -2,6 +2,8 @@
 
 A program written in Rust that helps to navigate quickly through many project folders.
 
+![To Showcase](http://dennis-schneider.com/downloads/to_showcase.gif)
+
 ## Installation
 
 * Install Rust (https://www.rust-lang.org/)
