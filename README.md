@@ -20,7 +20,12 @@ function to() {
 
 * Now create a `.to` folder in your home directory
 * Create a `paths.cfg` file in there
-* Fill in your absolute project folder paths ending with `/`
+* Fill in your absolute project folder paths ending with `/`. Example:
+
+```
+/home/username/Projects/Work/
+/home/username/Projects/Private/
+```
 
 ## Usage
 
