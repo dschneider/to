@@ -71,11 +71,11 @@ fn match_folder_names(path: &str, file: Result<std::fs::DirEntry, std::io::Error
                             vec.push(path.to_string() + folder_string);
                         }
                     },
-                    None => println!("zolo")
+                    None => panic!("No valid unicode")
                 }
             }
         },
-        Err(err) => println!("{}", err)
+        Err(err) => panic!("{}", err)
     }
 }
 
@@ -95,7 +95,10 @@ fn prompt_user_for_input(matches: &Vec<String>) {
                     println!("{}", matches[choice as usize]);
                 }
             },
-            Err(err) => panic!("{}", err)
+            Err(_) => {
+                chosen = false;
+                println!("{}", "Please enter one of the shown numbers");
+            }
         }
     }
 }

@@ -1,6 +1,6 @@
 # to
 
-A program written in Rust that helps to navigate quickly through many project folders.
+A program written in Rust that helps you to navigate quickly through many project folders.
 
 ![To Showcase](http://dennis-schneider.com/downloads/to_showcase.gif)
 
@@ -14,8 +14,8 @@ A program written in Rust that helps to navigate quickly through many project fo
 
 ```
 function to() {
-    cd `~/bin/to $1`
-}}
+  cd `~/bin/to $1`
+}
 ```
 
 * Now create a `.to` folder in your home directory
@@ -35,11 +35,15 @@ If more than one project folder containing the given folder name is found, the
 program will prompt you to choose a folder. `To` does a partial match on
 your folder name.
 
+
+## Debugging
+
+If you descover a problem, run the `to` binary without the function from the
+.bashrc / .zshrc to see the error output.
+
+
 ## TODO
 
-* Insert small gif in Readme that shows usage
-* Let the program set up the .to folder in home
-* Tests
-* Check if imported modules used
-* Don't panic if letter for input is given, just go back to the loop
-* Remove Zolo
+* Refactoring!
+* Use Vector of &str instead of String?
+* Remove .to folder and check if it works
