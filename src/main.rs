@@ -1,7 +1,7 @@
 use std::env;
 use std::process;
 use std::fs;
-use std::io::prelude::*;
+use std::io::Write;
 
 mod config;
 mod input;
@@ -19,7 +19,6 @@ fn main() {
         None => println!("Error: Missing folder name. Usage: to [foldername]\n")
     };
 }
-
 
 fn read_folder_argument() -> Option<String> {
     env::args().nth(1)
@@ -41,7 +40,7 @@ fn look_for_folder(folder_name: &str) {
 }
 
 fn search_matching_folders_in_paths_from_config(paths: Vec<String>, desired_folder: &str) -> Vec<String> {
-    let mut matches: Vec<String> = Vec::new();
+    let mut matches = vec!();
 
     for path in &paths {
         read_entries_in_path(&path, desired_folder, &mut matches);
@@ -50,53 +49,48 @@ fn search_matching_folders_in_paths_from_config(paths: Vec<String>, desired_fold
     matches
 }
 
-fn read_entries_in_path(path: &str, desired_folder: &str, vec: &mut Vec<String>) {
+fn read_entries_in_path(path: &str, desired_folder: &str, matches: &mut Vec<String>) {
     match fs::read_dir(path) {
         Ok(files) => {
             for file in files {
-                 match_folder_names(path, file, desired_folder, vec);
+                 if let Some(folder_name) = match_folder_names(file, desired_folder) {
+                     matches.push(path.to_owned() + &folder_name);
+                 }
             }
-        },
+        }
         Err(err) => println!("{}", err)
     }
 }
 
-fn match_folder_names(path: &str, file: Result<std::fs::DirEntry, std::io::Error>, desired_folder: &str, vec: &mut Vec<String>) {
+fn match_folder_names(file: Result<std::fs::DirEntry, std::io::Error>, desired_folder: &str) -> Option<String> {
     match file {
-        Ok(file_object) => {
-            if file_object.path().is_dir() {
-                match file_object.file_name().to_str() {
-                    Some(folder_string) => {
-                        if folder_string.contains(desired_folder) {
-                            vec.push(path.to_string() + folder_string);
-                        }
-                    },
-                    None => panic!("No valid unicode")
-                }
+        Ok(ref dir_entry) if dir_entry.path().is_dir() => {
+            let file_name = dir_entry.file_name();
+            let folder_name = file_name.to_str().expect("File name is not valid unicode");
+            if folder_name.contains(desired_folder) {
+                Some(folder_name.to_owned())
+            } else {
+                None
             }
-        },
+        }
+        Ok(_) => None,
         Err(err) => panic!("{}", err)
     }
 }
 
 fn prompt_user_for_input(matches: &Vec<String>) {
-    let mut chosen: bool = false;
-
-    while !chosen {
+    loop {
         show_matching_folders(matches);
 
         match input::read_user_input() {
+            Ok(choice) if choice > matches.len() as u16 - 1 => {
+                write_to_terminal_through_stderr!("Please enter one of the shown inputs");
+            }
             Ok(choice) => {
-                if choice > matches.len() as i32 - 1 {
-                    chosen = false;
-                    write_to_terminal_through_stderr!("Please enter one of the shown inputs");
-                } else {
-                    chosen = true;
-                    println!("{}", matches[choice as usize]);
-                }
-            },
+                println!("{}", matches[choice as usize]);
+                break;
+            }
             Err(_) => {
-                chosen = false;
                 println!("{}", "Please enter one of the shown numbers");
             }
         }
@@ -107,11 +101,8 @@ fn show_matching_folders(matches: &Vec<String>) {
     write_to_terminal_through_stderr!("Multiple matching folders found!");
     write_to_terminal_through_stderr!("Please choose a folder:\n");
 
-    let mut index = 0;
-
-    for mat in matches {
+    for (index, mat) in matches.iter().enumerate() {
         write_to_terminal_through_stderr!("{}: {}", index, mat);
-        index = index + 1;
     }
 
     write_to_terminal_through_stderr!("");

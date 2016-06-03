@@ -1,6 +1,6 @@
 use std::io;
 
-pub fn read_user_input() -> Result<i32, &'static str> {
+pub fn read_user_input() -> Result<u16, &'static str> {
     let mut input = String::new();
 
     match io::stdin().read_line(&mut input) {
@@ -9,8 +9,8 @@ pub fn read_user_input() -> Result<i32, &'static str> {
     }
 }
 
-fn parse_input_to_int(input: String) -> Result<i32, &'static str> {
-    match input.parse::<i32>() {
+fn parse_input_to_int(input: String) -> Result<u16, &'static str> {
+    match input.parse() {
         Ok(result) => Ok(result),
         Err(_) => Err("Couldn't parse number")
     }
