@@ -5,18 +5,11 @@ use std::io::BufReader;
 use std::io::BufRead;
 
 pub fn get_paths_from_config_in_home_folder() -> Vec<String> {
-    let loaded_paths: Vec<String> = match env::home_dir() {
-        Some(ref home_dir) => match load_config_file(home_dir) {
-            Ok(paths) => paths,
-            Err(err) => {
-                println!("{}", err);
-                Vec::new()
-            }
-        },
-        None => panic!("No home directory found!")
-    };
-
-    loaded_paths
+    let home_dir = env::home_dir().expect("No home directory found!");
+    load_config_file(&home_dir).unwrap_or_else(|e| {
+        println!("Error! {}", e);
+        Vec::new()
+    })
 }
 
 fn load_config_file(home_dir: &PathBuf) -> Result<Vec<String>, &str> {
